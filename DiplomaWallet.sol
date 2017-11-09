@@ -12,7 +12,7 @@ contract DimplomaWallet {
       string hashCode;
     }
 
-    address public InstitutionsManager;
+    address public InstitutionsManagerAddr;
     address public Owner;
 	string public StudentFirstName;
     string public StudentLastName;
@@ -20,17 +20,21 @@ contract DimplomaWallet {
 	Diploma[] public Assets;
     WalletState public state;
 
-    function DimplomaWallet() {
+    function DimplomaWallet(address instManager) {
       Owner = msg.sender;
       state = WalletState.Created;
-      InstitutionsManager = 0x0;
+      InstitutionsManagerAddr = instManager;
     }
 
     function AddDiploma(address institution, string title) {
       // check that this institue is allowed to add new diplomas
-      // InstitutionsManager.call(bytes4(sha3("IsAllowedInst(address)")), institution);
-      // if false then revert...
-      Diploma newDiploma;
+      InstitutionsManager mgr = InstitutionsManager(InstitutionsManagerAddr);
+      bool res = mgr.IsAllowedInst(institution);
+      if (res == false) {
+        revert();
+      }
+
+      Diploma memory newDiploma;
       newDiploma.institution = institution;
       newDiploma.title = title;
       newDiploma.state = DiplomaState.PendingApproval;
@@ -59,4 +63,18 @@ contract DimplomaWallet {
         Assets[id].state = DiplomaState.Rejected;
     }
 
+}
+
+///////  
+
+contract InstitutionsManager {
+
+    function InstitutionsManager() {
+
+    }
+
+    // make actual call
+    function IsAllowedInst(address instAddress) returns (bool ret) {
+        return true;
+    }
 }
