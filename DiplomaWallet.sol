@@ -20,22 +20,24 @@ contract DimplomaWallet {
 	Diploma[] public Assets;
     WalletState public state;
 
+    // Ctor
     function DimplomaWallet(address instManager) {
       Owner = msg.sender;
       state = WalletState.Created;
       InstitutionsManagerAddr = instManager;
     }
 
-    function AddDiploma(address institution, string title) {
+    function AddDiploma(string title) {
       // check that this institue is allowed to add new diplomas
       InstitutionsManager mgr = InstitutionsManager(InstitutionsManagerAddr);
-      bool res = mgr.IsAllowedInst(institution);
+      bool res = mgr.IsAllowedInst(msg.sender);
       if (res == false) {
         revert();
       }
-
+ 
+      // Create a new diploma object and push it into the users diploma's list
       Diploma memory newDiploma;
-      newDiploma.institution = institution;
+      newDiploma.institution = msg.sender;
       newDiploma.title = title;
       newDiploma.state = DiplomaState.PendingApproval;
       Assets.push(newDiploma);
@@ -45,6 +47,13 @@ contract DimplomaWallet {
         if (msg.sender != Owner) {
             revert();
         }
+
+        // invalid id
+        if (Assets.length - 1 < id) {
+            revert();
+        }
+
+        //  only allow approving diplomas which are pending approval
         if (Assets[id].state != DiplomaState.PendingApproval) {
             revert();
         }
@@ -56,6 +65,13 @@ contract DimplomaWallet {
         if (msg.sender != Owner) {
             revert();
         }
+
+        // invalid id
+        if (Assets.length - 1 < id) {
+            revert();
+        }
+        
+        //  only allow rejecting diplomas which are pending approval
         if (Assets[id].state != DiplomaState.PendingApproval) {
             revert();
         }
@@ -69,12 +85,22 @@ contract DimplomaWallet {
 
 contract InstitutionsManager {
 
-    function InstitutionsManager() {
+  mapping (address => bool) addressToIsAllowed;
+  address Owner;
 
-    }
+  function InstitutionsManager() {
+    Owner = msg.sender;
+  }
 
-    // make actual call
-    function IsAllowedInst(address instAddress) returns (bool ret) {
-        return true;
+  function IsAllowedInst(address instAddress) returns (bool ret) {
+    return addressToIsAllowed[instAddress];
+  }
+
+  function ApproveInstitution(address instAddress) {
+    if (msg.sender != Owner) {
+      revert();
     }
+      
+    addressToIsAllowed[instAddress] = true;
+  }
 }
